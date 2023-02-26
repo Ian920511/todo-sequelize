@@ -16,7 +16,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(methodOverride("_method"));
 
 app.get("/", (req, res) => {
-  res.send("hello world!");
+  res.render("index");
 });
 
 app.get("/users/login", (req, res) => {
