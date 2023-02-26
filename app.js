@@ -96,6 +96,15 @@ app.get("/users/logout", (req, res) => {
   res.send("logout");
 });
 
+app.use(flash());
+app.use((req, res, next) => {
+  res.locals.isAuthenticated = req.isAuthenticated;
+  res.locals.user = req.user;
+  res.locals.success_msg = req.flash("success_msg");
+  res.locals.warning_msg = req.flash("warning_msg");
+  next();
+});
+
 app.listen(PORT, () => {
   console.log(`Sever is running on http://localhost:${PORT}`);
 });
