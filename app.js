@@ -2,24 +2,20 @@ const express = require("express");
 const exphbs = require("express-handlebars");
 const methodOverride = require("method-override");
 const session = require("express-session");
-const passport = require("passport");
-const bcrypt = require("bcryptjs");
+const flash = require("connect-flash");
 
 const app = express();
 const PORT = 3000;
 
-const db = require("./models");
-const Todo = db.Todo;
-const User = db.User;
+if (process.env.NODE_ENV !== "production") {
+  require("dotenv").config();
+}
+
+const routes = require("./routes");
+const usePassport = require("./config/passport");
 
 app.engine("handlebars", exphbs({ defaultLayout: "main" }));
 app.set("view engine", "handlebars");
-
-const usePassport = require("./config/passport");
-usePassport(app);
-
-app.use(express.urlencoded({ extended: true }));
-app.use(methodOverride("_method"));
 
 app.use(
   session({
@@ -29,72 +25,10 @@ app.use(
   })
 );
 
-app.get("/", (req, res) => {
-  return Todo.findAll({
-    raw: true,
-    nest: true,
-  })
-    .then((todos) => {
-      return res.render("index", { todos });
-    })
-    .catch((error) => {
-      return res.status(422).json(error);
-    });
-});
+app.use(express.urlencoded({ extended: true }));
+app.use(methodOverride("_method"));
 
-app.get("/todos/:id", (req, res) => {
-  const id = req.params.id;
-  return Todo.findByPk(id)
-    .then((todo) => res.render("detail", { todo: todo.toJSON() }))
-    .catch((error) => console.log(error));
-});
-
-app.get("/users/login", (req, res) => {
-  res.render("login");
-});
-
-app.post(
-  "/users/login",
-  passport.authenticate("local", {
-    successRedirect: "/",
-    failureRedirect: "/users/login",
-  })
-);
-
-app.get("/users/register", (req, res) => {
-  res.render("register");
-});
-
-app.post("/users/register", (req, res) => {
-  const { name, email, password, confirmPassword } = req.body;
-  User.findOne({ where: { email } }).then((user) => {
-    if (user) {
-      console.log("User already exists");
-      return res.render("register", {
-        name,
-        email,
-        password,
-        confirmPassword,
-      });
-    }
-    return bcrypt
-      .genSalt(10)
-      .then((salt) => bcrypt.hash(password, salt))
-      .then((hash) =>
-        User.create({
-          name,
-          email,
-          password: hash,
-        })
-      )
-      .then(() => res.redirect("/"))
-      .catch((err) => console.log(err));
-  });
-});
-
-app.get("/users/logout", (req, res) => {
-  res.send("logout");
-});
+usePassport(app);
 
 app.use(flash());
 app.use((req, res, next) => {
@@ -104,6 +38,8 @@ app.use((req, res, next) => {
   res.locals.warning_msg = req.flash("warning_msg");
   next();
 });
+
+app.use(routes);
 
 app.listen(PORT, () => {
   console.log(`Sever is running on http://localhost:${PORT}`);

@@ -1,5 +1,6 @@
 const passport = require("passport");
-const LocalStrategy = require("passport-local");
+const LocalStrategy = require("passport-local").Strategy;
+const FacebookStrategy = require("passport-facebook").Strategy;
 const bcrypt = require("bcryptjs");
 const db = require("../models");
 const User = db.User;
@@ -9,26 +10,35 @@ module.exports = (app) => {
   app.use(passport.session());
 
   passport.use(
-    new LocalStrategy({ usernameField: "email" }, (email, password, done) => {
-      User.findOne({ where: { email } })
-        .then((user) => {
-          if (!user) {
-            return done(null, false, {
-              message: "That email is not registered!",
-            });
-          }
-
-          return bcrypt.compare(password, user.password).then((isMatch) => {
-            if (!isMatch) {
-              return done(null, false, {
-                message: "Email or Password incorrect.",
-              });
+    new LocalStrategy(
+      { usernameField: "email", passReqToCallback: true },
+      (req, email, password, done) => {
+        User.findOne({ where: { email } })
+          .then((user) => {
+            if (!user) {
+              return done(
+                null,
+                false,
+                req.flash("warning_message", "That email is not registered!")
+              );
             }
-            return done(null, user);
-          });
-        })
-        .catch((error) => done(error, false));
-    })
+
+            return bcrypt.compare(password, user.password).then((isMatch) => {
+              if (!isMatch) {
+                return done(
+                  null,
+                  false,
+                  req.flash("warning_message", "Email or password incorrect.")
+                );
+              }
+              console.log(user);
+              console.log(user.id);
+              return done(null, user);
+            });
+          })
+          .catch((error) => done(error, false));
+      }
+    )
   );
 
   passport.use(
