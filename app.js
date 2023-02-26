@@ -15,6 +15,26 @@ app.get("/", (req, res) => {
   res.send("hello world!");
 });
 
+app.get("/users/login", (req, res) => {
+  res.render("login");
+});
+
+app.post("/users/login", (req, res) => {
+  res.render("login");
+});
+
+app.get("/users/register", (req, res) => {
+  res.render("register");
+});
+
+app.post("/users/register", (req, res) => {
+  res.render("register");
+});
+
+app.get("/users/logout", (req, res) => {
+  res.send("logout");
+});
+
 app.listen(PORT, () => {
   console.log(`Sever is running on http://localhost:${PORT}`);
 });
